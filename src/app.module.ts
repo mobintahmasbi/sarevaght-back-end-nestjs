@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BusinessModule } from './business/business.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -12,7 +13,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       uri: configService.get<string>('DATABASE_URL')
     }),
     inject: [ConfigService]
-  })],
+  }),
+  BusinessModule
+  ],
   controllers: [],
   providers: [],
 })
