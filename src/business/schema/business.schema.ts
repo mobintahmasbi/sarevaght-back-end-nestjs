@@ -29,7 +29,8 @@ export class Business{
 
     @Prop({
         type: String,
-        match: /^09\d{9}$/
+        match: /^09\d{9}$/,
+        unique: true
     })
     BusinessOwnerPhoneNumber: string
 
