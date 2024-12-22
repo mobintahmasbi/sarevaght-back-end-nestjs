@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BusinessModule } from './business/business.module';
+import { OTPModule } from './otp/otp.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -14,7 +15,8 @@ import { BusinessModule } from './business/business.module';
     }),
     inject: [ConfigService]
   }),
-  BusinessModule
+  BusinessModule,
+  OTPModule
   ],
   controllers: [],
   providers: [],
