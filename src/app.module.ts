@@ -6,7 +6,8 @@ import { OTPModule } from './otp/otp.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
-    envFilePath: '.development.env'
+    envFilePath: '.development.env',
+    isGlobal: true
   }),
   MongooseModule.forRootAsync({
     imports: [ConfigModule],

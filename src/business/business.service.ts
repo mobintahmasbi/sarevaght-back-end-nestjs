@@ -12,16 +12,15 @@ export class BusinessService {
 
   async checkExistanceOfBusinessByPhoneNumber(
     findBusinessByPhonenumberDto: FindBusinessByPhonenumberDto,
-  ): Promise<
-    | { IsBusinessExist: boolean }
-    | { IsBusinessExist: boolean; business: Business }
-  > {
+  ): Promise<{ IsBusinessExist: boolean; business: Business }> 
+  {
     const business = await this.businessModel.find(
       findBusinessByPhonenumberDto,
     );
     if (business.length === 0) {
       return {
         IsBusinessExist: false,
+        business: null
       };
     }
     return {
