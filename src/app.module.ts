@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BusinessModule } from './business/business.module';
 import { OTPModule } from './otp/otp.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -16,6 +17,11 @@ import { OTPModule } from './otp/otp.module';
     }),
     inject: [ConfigService]
   }),
+  ThrottlerModule.forRoot([{
+    ttl: 60000,
+    limit: 1000
+  }
+  ]),
   BusinessModule,
   OTPModule
   ],
