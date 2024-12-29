@@ -11,9 +11,6 @@ import { ThrottlerGuard } from "@nestjs/throttler";
 @Module({
     imports: [MongooseModule.forFeature([{name: OTP.name, schema: OTPSchema}]), BusinessModule, AuthModule],
     controllers: [OTPController],
-    providers: [OTPService, {
-        provide: APP_GUARD,
-        useClass: ThrottlerGuard
-    }]
+    providers: [OTPService]
 })
 export class OTPModule{}
