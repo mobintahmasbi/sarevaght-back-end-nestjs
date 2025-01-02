@@ -44,6 +44,7 @@ export class OTPService {
     };
   }
 
+  //needs a refactor
   async validateOTP(validateOTPDto: ValidateOTPDto) {
     const { phoneNumber, otpCode } = validateOTPDto;
 

@@ -77,4 +77,13 @@ export class BusinessService {
       return new InternalServerErrorException()
     }
   }
+
+  async getAdditionalInfo(token: string) {
+    const { phoneNumber } = this.authService.decodeToken(token)
+    const businessDoc = await this.businessModel.find({ BusinessOwnerPhoneNumber: phoneNumber })
+    return {
+      workSchedule: businessDoc[0].WorkTimes,
+      address: businessDoc[0].BusinessAddress
+    }
+  }
 }
