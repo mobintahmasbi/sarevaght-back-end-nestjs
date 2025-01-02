@@ -37,4 +37,9 @@ export class AuthService {
     const decodedToken = this.jwtService.verify(token);
     return decodedToken;
   }
+
+  decodeToken(token: string) {
+    const decodedToken = this.jwtService.decode(token)
+    return decodedToken
+  }
 }
