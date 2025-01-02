@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { HydratedDocument } from "mongoose";
-import { BusinessAddressSchema, BusinessAddress } from './business-address.schema';
 import { AccountTypeEnum } from "./account-type.enum";
 
 export type BusinessDocument = HydratedDocument<Business>
@@ -24,8 +23,12 @@ export class Business{
     @Prop()
     OwnerFullName: string
 
-    @Prop({ type: BusinessAddressSchema})
-    BusinessAddress: BusinessAddress
+    @Prop({ type: Object , default: {
+        state: null,
+        city: null,
+        detail: null
+    }})
+    BusinessAddress: object
 
     @Prop({
         type: String,

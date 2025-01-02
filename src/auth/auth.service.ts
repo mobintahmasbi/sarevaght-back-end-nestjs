@@ -15,6 +15,7 @@ export class AuthService {
           btype: businessObj.BusinessType,
           fullName: businessObj.OwnerFullName,
         },
+        registerToken : false
       },
       {
         expiresIn: '7d',

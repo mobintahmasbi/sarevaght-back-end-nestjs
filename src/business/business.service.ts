@@ -6,6 +6,7 @@ import { Business } from './schema/business.schema';
 import { CreateBusinessDto } from './DTO/create-business.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
+import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
 
 @Injectable()
 export class BusinessService {
@@ -84,6 +85,37 @@ export class BusinessService {
     return {
       workSchedule: businessDoc[0].WorkTimes,
       address: businessDoc[0].BusinessAddress
+    }
+  }
+
+  //TODO: needs to check state and city name to be correct value
+  async setBusinessAddress(setBusinessAddressDto: SetBusinessAddressDto) {
+    const { phoneNumber } = this.authService.decodeToken(setBusinessAddressDto.token)
+    try {
+      const newBusinessDoc = await this.businessModel.updateOne({ BusinessOwnerPhoneNumber: phoneNumber }, {
+        BusinessAddress: {
+          state: setBusinessAddressDto.State,
+          city: setBusinessAddressDto.city,
+          detail: setBusinessAddressDto.detail
+        }
+      })
+      if(newBusinessDoc.modifiedCount === 1) {
+        return {
+          status: true,
+          message: 'business set correctly',
+          BusinessAddress: {
+            state: setBusinessAddressDto.State,
+            city: setBusinessAddressDto.city,
+            detail: setBusinessAddressDto.detail
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error.message)
+      return {
+        status: false,
+        message: 'something went wrong during setting address'
+      }
     }
   }
 }

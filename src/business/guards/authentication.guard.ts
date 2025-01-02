@@ -14,7 +14,10 @@ export class AuthGuard implements CanActivate {
         }
         try {
             const decodedToken = this.authService.verifyToken(token)
-            return true
+            if(!decodedToken.registerToken){
+                return true
+            }
+            return false
         } catch (error) {
             return false
         }
