@@ -94,7 +94,7 @@ export class BusinessService {
     try {
       const newBusinessDoc = await this.businessModel.updateOne({ BusinessOwnerPhoneNumber: phoneNumber }, {
         BusinessAddress: {
-          state: setBusinessAddressDto.State,
+          state: setBusinessAddressDto.state,
           city: setBusinessAddressDto.city,
           detail: setBusinessAddressDto.detail
         }
@@ -104,7 +104,7 @@ export class BusinessService {
           status: true,
           message: 'business set correctly',
           BusinessAddress: {
-            state: setBusinessAddressDto.State,
+            state: setBusinessAddressDto.state,
             city: setBusinessAddressDto.city,
             detail: setBusinessAddressDto.detail
           }

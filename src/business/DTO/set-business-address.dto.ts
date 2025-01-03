@@ -2,7 +2,7 @@ import { IsString } from "class-validator";
 
 export class SetBusinessAddressDto{
     @IsString()
-    State: string
+    state: string
 
     @IsString()
     city: string
