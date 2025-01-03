@@ -4,6 +4,7 @@ import { CreateBusinessDto } from "./DTO/create-business.dto";
 import { BusinessService } from "./business.service";
 import { AuthGuard } from "./guards/authentication.guard";
 import { SetBusinessAddressDto } from "./DTO/set-business-address.dto";
+import { SetBusinessWorkTimesDto } from "./DTO/set-business-work-times.dto";
 
 @Controller('business')
 export class BusinessController{
@@ -25,5 +26,11 @@ export class BusinessController{
     @UseGuards(AuthGuard)
     async setAddress(@Body() setBusinessAddressDto: SetBusinessAddressDto) {
         return this.businessService.setBusinessAddress(setBusinessAddressDto)
+    }
+
+    @Post('set-Times')
+    @UseGuards(AuthGuard)
+    async setTimes(@Body() setBusinessWorkTimesDto: SetBusinessWorkTimesDto) {
+        return this.businessService.setWorkTimes(setBusinessWorkTimesDto)
     }
 }

@@ -66,6 +66,7 @@ export class Business{
             Friday: { morning: "", afternoon: "" },
             Saturday: { morning: "", afternoon: "" },
             Sunday: { morning: "", afternoon: "" },
+            Weekend: { morning: "", afternoon: ""}
         },
     })
     WorkTimes: Record<string, DayWorkTime>;

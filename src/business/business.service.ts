@@ -7,6 +7,7 @@ import { CreateBusinessDto } from './DTO/create-business.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
 import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
+import { SetBusinessWorkTimesDto } from './DTO/set-business-work-times.dto';
 
 @Injectable()
 export class BusinessService {
@@ -60,6 +61,7 @@ export class BusinessService {
           Friday: { morning: '', afternoon: '' },
           Saturday: { morning: '', afternoon: '' },
           Sunday: { morning: '', afternoon: '' },
+          Weekend: { morning: '', afternoon: '' }
         },
         BusinessURL: createBusinessDto.businessURL,
         //this is something should think about it to find a good defualt picture url
@@ -117,5 +119,42 @@ export class BusinessService {
         message: 'something went wrong during setting address'
       }
     }
+  }
+
+  async setWorkTimes(setBusinessWorkTimesDto: SetBusinessWorkTimesDto) {
+      const { phoneNumber } = this.authService.decodeToken(setBusinessWorkTimesDto.token)
+      let workTimeObj = setBusinessWorkTimesDto
+      delete workTimeObj.token
+      try {
+        const updatedBusinessDoc = await this.businessModel.updateOne({
+          BusinessOwnerPhoneNumber: phoneNumber
+        }, {
+          WorkTimes: {
+            ...workTimeObj
+          }
+        })
+        if(updatedBusinessDoc.modifiedCount === 1) {
+          return {
+            status: true,
+            message: 'setting work times successfully!!!',
+            phoneNumber,
+            workTimeObj
+          }
+        }
+        return {
+          status: false,
+          message: 'something went wrong during setting up work times!!!',
+          phoneNumber,
+          workTimeObj
+        }
+      } catch (error) {
+        console.error(error.message)
+        return {
+          status: false,
+          message: 'something went wrong during setting up work times!!!',
+          phoneNumber,
+          workTimeObj
+        }
+      }
   }
 }
