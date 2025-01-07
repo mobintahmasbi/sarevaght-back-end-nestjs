@@ -20,7 +20,7 @@ export class BusinessService {
     findBusinessByPhonenumberDto: FindBusinessByPhonenumberDto,
   ): Promise<{ IsBusinessExist: boolean; business: Business }> {
     const business = await this.businessModel.find({
-      BusinessOwnerPhoneNumber: findBusinessByPhonenumberDto.phoneNumber
+      BusinessOwnerPhoneNumber: findBusinessByPhonenumberDto.phoneNumber,
     });
     if (business.length === 0) {
       return {
@@ -61,100 +61,138 @@ export class BusinessService {
           Friday: { morning: '', afternoon: '' },
           Saturday: { morning: '', afternoon: '' },
           Sunday: { morning: '', afternoon: '' },
-          Weekend: { morning: '', afternoon: '' }
+          Weekend: { morning: '', afternoon: '' },
         },
         BusinessURL: createBusinessDto.businessURL,
         //this is something should think about it to find a good defualt picture url
-        BusinessPictureURL: 'somthing'
+        BusinessPictureURL: 'somthing',
       });
-      const businessObj = { ...createBusinessDto}
-      delete businessObj.token
-      const authToken = await this.authService.generateAccessToken(phoneNumber, business)
+      const businessObj = { ...createBusinessDto };
+      delete businessObj.token;
+      const authToken = await this.authService.generateAccessToken(
+        phoneNumber,
+        business,
+      );
       return {
         status: true,
         message: 'business create successfully',
-        token: authToken
-      }
+        token: authToken,
+      };
     } catch (error) {
-      console.error(error.message)
-      return new InternalServerErrorException()
+      console.error(error.message);
+      return new InternalServerErrorException();
     }
   }
 
   async getAdditionalInfo(token: string) {
-    const { phoneNumber } = this.authService.decodeToken(token)
-    const businessDoc = await this.businessModel.find({ BusinessOwnerPhoneNumber: phoneNumber })
+    const { phoneNumber } = this.authService.decodeToken(token);
+    const businessDoc = await this.businessModel.find({
+      BusinessOwnerPhoneNumber: phoneNumber,
+    });
     return {
       workSchedule: businessDoc[0].WorkTimes,
-      address: businessDoc[0].BusinessAddress
-    }
+      address: businessDoc[0].BusinessAddress,
+    };
   }
 
   //TODO: needs to check state and city name to be correct value
   async setBusinessAddress(setBusinessAddressDto: SetBusinessAddressDto) {
-    const { phoneNumber } = this.authService.decodeToken(setBusinessAddressDto.token)
+    const { phoneNumber } = this.authService.decodeToken(
+      setBusinessAddressDto.token,
+    );
     try {
-      const newBusinessDoc = await this.businessModel.updateOne({ BusinessOwnerPhoneNumber: phoneNumber }, {
-        BusinessAddress: {
-          state: setBusinessAddressDto.state,
-          city: setBusinessAddressDto.city,
-          detail: setBusinessAddressDto.detail
-        }
-      })
-      if(newBusinessDoc.modifiedCount === 1) {
+      const newBusinessDoc = await this.businessModel.updateOne(
+        { BusinessOwnerPhoneNumber: phoneNumber },
+        {
+          BusinessAddress: {
+            state: setBusinessAddressDto.state,
+            city: setBusinessAddressDto.city,
+            detail: setBusinessAddressDto.detail,
+          },
+        },
+      );
+      if (newBusinessDoc.modifiedCount === 1) {
         return {
           status: true,
           message: 'business set correctly',
           BusinessAddress: {
             state: setBusinessAddressDto.state,
             city: setBusinessAddressDto.city,
-            detail: setBusinessAddressDto.detail
-          }
-        }
+            detail: setBusinessAddressDto.detail,
+          },
+        };
       }
     } catch (error) {
-      console.error(error.message)
+      console.error(error.message);
       return {
         status: false,
-        message: 'something went wrong during setting address'
-      }
+        message: 'something went wrong during setting address',
+      };
     }
   }
 
   async setWorkTimes(setBusinessWorkTimesDto: SetBusinessWorkTimesDto) {
-      const { phoneNumber } = this.authService.decodeToken(setBusinessWorkTimesDto.token)
-      let workTimeObj = setBusinessWorkTimesDto
-      delete workTimeObj.token
-      try {
-        const updatedBusinessDoc = await this.businessModel.updateOne({
-          BusinessOwnerPhoneNumber: phoneNumber
-        }, {
+    const { phoneNumber } = this.authService.decodeToken(
+      setBusinessWorkTimesDto.token,
+    );
+    let workTimeObj = setBusinessWorkTimesDto;
+    delete workTimeObj.token;
+    try {
+      const updatedBusinessDoc = await this.businessModel.updateOne(
+        {
+          BusinessOwnerPhoneNumber: phoneNumber,
+        },
+        {
           WorkTimes: {
-            ...workTimeObj
-          }
-        })
-        if(updatedBusinessDoc.modifiedCount === 1) {
-          return {
-            status: true,
-            message: 'setting work times successfully!!!',
-            phoneNumber,
-            workTimeObj
-          }
-        }
+            ...workTimeObj,
+          },
+        },
+      );
+      if (updatedBusinessDoc.modifiedCount === 1) {
         return {
-          status: false,
-          message: 'something went wrong during setting up work times!!!',
+          status: true,
+          message: 'setting work times successfully!!!',
           phoneNumber,
-          workTimeObj
-        }
-      } catch (error) {
-        console.error(error.message)
-        return {
-          status: false,
-          message: 'something went wrong during setting up work times!!!',
-          phoneNumber,
-          workTimeObj
-        }
+          workTimeObj,
+        };
       }
+      return {
+        status: false,
+        message: 'something went wrong during setting up work times!!!',
+        phoneNumber,
+        workTimeObj,
+      };
+    } catch (error) {
+      console.error(error.message);
+      return {
+        status: false,
+        message: 'something went wrong during setting up work times!!!',
+        phoneNumber,
+        workTimeObj,
+      };
+    }
+  }
+
+  async getFullBusinessData(token: string) {
+    const { phoneNumber } = this.authService.decodeToken(token);
+    try {
+      const businessDoc = await this.businessModel.find({
+        BusinessOwnerPhoneNumber: phoneNumber,
+      });
+      return {
+        status: true,
+        message: 'getting information successsfully!!!',
+        business: {
+          phoneNumber,
+          businessName: businessDoc[0].BusinessName,
+          ownerName: businessDoc[0].OwnerFullName,
+          BusinessURL: businessDoc[0].BusinessURL,
+          address: businessDoc[0].BusinessAddress,
+        },
+      };
+    } catch (error) {
+      console.error(error.message)
+      return new InternalServerErrorException()
+    }
   }
 }

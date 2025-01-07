@@ -33,4 +33,10 @@ export class BusinessController{
     async setTimes(@Body() setBusinessWorkTimesDto: SetBusinessWorkTimesDto) {
         return this.businessService.setWorkTimes(setBusinessWorkTimesDto)
     }
+
+    @Post('get-info')
+    @UseGuards(AuthGuard)
+    async getBusinessInfo(@Body() Token: { token: string }) {
+        return this.businessService.getFullBusinessData(Token.token)
+    }
 }
