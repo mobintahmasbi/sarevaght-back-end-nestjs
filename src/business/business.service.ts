@@ -8,7 +8,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
 import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
 import { SetBusinessWorkTimesDto } from './DTO/set-business-work-times.dto';
-import { SetBusinessSetting } from './DTO/set-business-setting.dto';
+import { BusinessAddressModel, SetBusinessSetting } from './DTO/set-business-setting.dto';
 
 @Injectable()
 export class BusinessService {
@@ -220,5 +220,58 @@ export class BusinessService {
     } catch (error) {
       return new InternalServerErrorException()
     }
+  }
+
+  async checkBusinessForActivation(token: string) {
+    const { phoneNumber } = this.authService.decodeToken(token)
+    const businessDoc = await this.businessModel.findOne({
+      BusinessOwnerPhoneNumber: phoneNumber
+    })
+    const address:BusinessAddressModel = businessDoc.BusinessAddress as BusinessAddressModel
+    const isBusinessAddressValid = this.checkBusinessAddressValue(address)
+    if(!isBusinessAddressValid) {
+      return {
+        status: false,
+        message: 'address does not have valid value'
+      }
+    }
+    const workTimes = businessDoc.WorkTimes
+    const isBusinessWorkTimesValid = this.checkBusinessWorkTimesValue(workTimes)
+    if(!isBusinessWorkTimesValid) {
+      return {
+        status: false,
+        message: 'work Times does not have valid value'
+      }
+    }
+    return {
+      status: true,
+      message: 'business have all info for activation'
+    }
+
+  }
+
+  checkBusinessAddressValue(BusinessAddress: BusinessAddressModel) : boolean {
+    if(BusinessAddress.state === "" || BusinessAddress.city === "" || BusinessAddress.detail === "") {
+      return false
+    }
+    if(BusinessAddress.state === null || BusinessAddress.city === null || BusinessAddress.detail === null) {
+      return false
+    }
+    return true
+  }
+  
+  checkBusinessWorkTimesValue(workTimes) {
+    const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Weekend']
+
+    for(let i = 0; i < 8; i++) {
+      const dayName = workTimes[i]
+      if(workTimes[dayName].morning === null || workTimes[dayName].morning === undefined || workTimes[dayName].morning === "") {
+        return false
+      }
+      if(workTimes[dayName].afternoon === null || workTimes[dayName].afternoon === undefined || workTimes[dayName].afternoon === "") {
+        return false
+      }
+    }
+    return true
   }
 }

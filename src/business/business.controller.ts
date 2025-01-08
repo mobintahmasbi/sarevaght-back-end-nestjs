@@ -46,4 +46,10 @@ export class BusinessController{
     async setSetting(@Body() setBusinessSetting: SetBusinessSetting) {
         return this.businessService.setBusinessSetting(setBusinessSetting)
     }
+
+    @Post('check-activation')
+    @UseGuards(AuthGuard)
+    async checkBusinessInfoForActivation(@Body() Token: {token: string}) {
+        return this.businessService.checkBusinessForActivation(Token.token)
+    }
 }

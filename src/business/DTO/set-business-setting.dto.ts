@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { IsString, ValidateNested } from "class-validator";
 
-class BusinessAddress{
+export class BusinessAddressModel{
     @IsString()
     state: string;
 
@@ -26,8 +26,8 @@ export class SetBusinessSetting {
   businessURL: string;
 
   @ValidateNested()
-  @Type(() => BusinessAddress)
-  businessAddress: BusinessAddress
+  @Type(() => BusinessAddressModel)
+  businessAddress: BusinessAddressModel
 
   @IsString()
   token: string;
