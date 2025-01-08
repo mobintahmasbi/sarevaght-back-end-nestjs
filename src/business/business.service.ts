@@ -8,6 +8,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
 import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
 import { SetBusinessWorkTimesDto } from './DTO/set-business-work-times.dto';
+import { SetBusinessSetting } from './DTO/set-business-setting.dto';
 
 @Injectable()
 export class BusinessService {
@@ -192,6 +193,31 @@ export class BusinessService {
       };
     } catch (error) {
       console.error(error.message)
+      return new InternalServerErrorException()
+    }
+  }
+
+  async setBusinessSetting(setBusinessSetting: SetBusinessSetting) {
+    const { phoneNumber } = this.authService.decodeToken(setBusinessSetting.token)
+    try {
+      const businessDoc = await this.businessModel.updateOne({
+        BusinessOwnerPhoneNumber: phoneNumber,
+      }, {
+        BusinessName: setBusinessSetting.businessName,
+        OwnerFullName: setBusinessSetting.ownerFullName,
+        BusinessURL: setBusinessSetting.businessURL,
+        BusinessType: setBusinessSetting.businessType,
+        BusinessAddress: {
+          state: setBusinessSetting.businessAddress.state,
+          city: setBusinessSetting.businessAddress.city,
+          detail: setBusinessSetting.businessAddress.detail 
+        }
+      })
+      return {
+        status: true,
+        message: 'business Information update successfully!!!'
+      }
+    } catch (error) {
       return new InternalServerErrorException()
     }
   }

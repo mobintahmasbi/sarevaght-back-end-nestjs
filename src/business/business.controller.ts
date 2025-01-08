@@ -5,6 +5,7 @@ import { BusinessService } from "./business.service";
 import { AuthGuard } from "./guards/authentication.guard";
 import { SetBusinessAddressDto } from "./DTO/set-business-address.dto";
 import { SetBusinessWorkTimesDto } from "./DTO/set-business-work-times.dto";
+import { SetBusinessSetting } from "./DTO/set-business-setting.dto";
 
 @Controller('business')
 export class BusinessController{
@@ -38,5 +39,11 @@ export class BusinessController{
     @UseGuards(AuthGuard)
     async getBusinessInfo(@Body() Token: { token: string }) {
         return this.businessService.getFullBusinessData(Token.token)
+    }
+
+    @Post('setting')
+    @UseGuards(AuthGuard)
+    async setSetting(@Body() setBusinessSetting: SetBusinessSetting) {
+        return this.businessService.setBusinessSetting(setBusinessSetting)
     }
 }
