@@ -50,6 +50,6 @@ export class BusinessController{
     @Post('check-activation')
     @UseGuards(AuthGuard)
     async checkBusinessInfoForActivation(@Body() Token: {token: string}) {
-        return this.businessService.checkBusinessForActivation(Token.token)
+        return this.businessService.checkBusinessForActivation(Token.token, true)
     }
 }

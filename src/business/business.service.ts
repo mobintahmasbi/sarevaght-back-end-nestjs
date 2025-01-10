@@ -1,4 +1,4 @@
-import { Model } from 'mongoose';
+import { ClientSession, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { FindBusinessByPhonenumberDto } from './DTO/find-business-by-phonenumber.dto';
@@ -222,8 +222,8 @@ export class BusinessService {
     }
   }
 
-  async checkBusinessForActivation(token: string) {
-    const { phoneNumber } = this.authService.decodeToken(token)
+  async checkBusinessForActivation(token: string, inController: boolean) {
+    const { phoneNumber, business } = this.authService.decodeToken(token)
     const businessDoc = await this.businessModel.findOne({
       BusinessOwnerPhoneNumber: phoneNumber
     })
@@ -243,10 +243,26 @@ export class BusinessService {
         message: 'work Times does not have valid value'
       }
     }
+    if(inController) {
+      return {
+        status: true,
+        message: 'business have all info for activation'
+      }
+    }
     return {
       status: true,
-      message: 'business have all info for activation'
+      accountType: businessDoc.AccountType,
+      startPlan: businessDoc.StartPlanDate,
+      endPlan: businessDoc.EndPlanDate,
+      phoneNumber,
+      business
     }
+  }
+
+  async updateBusiness(phoneNumber: string, query: object, session: ClientSession) {
+    await this.businessModel.updateOne({
+      BusinessOwnerPhoneNumber: phoneNumber
+    }, { ...query }, { session } )
 
   }
 
