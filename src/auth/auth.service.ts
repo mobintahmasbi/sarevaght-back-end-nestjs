@@ -14,6 +14,9 @@ export class AuthService {
           bname: businessObj.BusinessName,
           btype: businessObj.BusinessType,
           fullName: businessObj.OwnerFullName,
+          aType: businessObj.AccountType,
+          spd: businessObj.StartPlanDate,
+          epd: businessObj.EndPlanDate
         },
         registerToken : false
       },
