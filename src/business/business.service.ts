@@ -280,7 +280,7 @@ export class BusinessService {
     const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Weekend']
 
     for(let i = 0; i < 8; i++) {
-      const dayName = workTimes[i]
+      const dayName = weekDayNames[i]
       if(workTimes[dayName].morning === null || workTimes[dayName].morning === undefined || workTimes[dayName].morning === "") {
         return false
       }
