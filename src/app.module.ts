@@ -6,6 +6,7 @@ import { OTPModule } from './otp/otp.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PaymentModule } from './payment/payment.module';
+import { AppointmentModule } from './appointment/appointment.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -26,7 +27,8 @@ import { PaymentModule } from './payment/payment.module';
   ]),
   BusinessModule,
   OTPModule,
-  PaymentModule
+  PaymentModule,
+  AppointmentModule
   ],
   controllers: [],
   providers: [{
