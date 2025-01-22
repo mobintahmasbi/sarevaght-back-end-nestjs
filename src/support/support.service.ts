@@ -32,4 +32,28 @@ export class SupportService{
             return new InternalServerErrorException()
         }
     }
+
+    async getSupportsList(token: string, filter: string) {
+        if(filter !== 'all' && filter !== "resolved" && filter !== "active") {
+            return {
+                status: false,
+                message: "filter don't have correct value!!!"
+            }
+        }
+        const { phoneNumber } = this.authService.decodeToken(token)
+        try {
+            const result = await this.supportModel.find({
+                phoneNumber,
+                status: filter
+            }, { phoneNumber: 0 })
+            return {
+                status: true,
+                message: 'get all supports successfully!!!',
+                results: result
+            }
+        } catch (error) {
+            console.error(error.message)
+            return new InternalServerErrorException()
+        }
+    }
 }
