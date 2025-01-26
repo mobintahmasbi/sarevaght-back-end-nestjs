@@ -8,7 +8,11 @@ import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
 import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
 import { SetBusinessWorkTimesDto } from './DTO/set-business-work-times.dto';
-import { BusinessAddressModel, SetBusinessSetting } from './DTO/set-business-setting.dto';
+import {
+  BusinessAddressModel,
+  SetBusinessSetting,
+} from './DTO/set-business-setting.dto';
+import { FindBusinessByURLDto } from './DTO/find-business-by-name.dto';
 
 @Injectable()
 export class BusinessService {
@@ -192,62 +196,69 @@ export class BusinessService {
         },
       };
     } catch (error) {
-      console.error(error.message)
-      return new InternalServerErrorException()
+      console.error(error.message);
+      return new InternalServerErrorException();
     }
   }
 
   async setBusinessSetting(setBusinessSetting: SetBusinessSetting) {
-    const { phoneNumber } = this.authService.decodeToken(setBusinessSetting.token)
+    const { phoneNumber } = this.authService.decodeToken(
+      setBusinessSetting.token,
+    );
     try {
-      const businessDoc = await this.businessModel.updateOne({
-        BusinessOwnerPhoneNumber: phoneNumber,
-      }, {
-        BusinessName: setBusinessSetting.businessName,
-        OwnerFullName: setBusinessSetting.ownerFullName,
-        BusinessURL: setBusinessSetting.businessURL,
-        BusinessType: setBusinessSetting.businessType,
-        BusinessAddress: {
-          state: setBusinessSetting.businessAddress.state,
-          city: setBusinessSetting.businessAddress.city,
-          detail: setBusinessSetting.businessAddress.detail 
-        }
-      })
+      const businessDoc = await this.businessModel.updateOne(
+        {
+          BusinessOwnerPhoneNumber: phoneNumber,
+        },
+        {
+          BusinessName: setBusinessSetting.businessName,
+          OwnerFullName: setBusinessSetting.ownerFullName,
+          BusinessURL: setBusinessSetting.businessURL,
+          BusinessType: setBusinessSetting.businessType,
+          BusinessAddress: {
+            state: setBusinessSetting.businessAddress.state,
+            city: setBusinessSetting.businessAddress.city,
+            detail: setBusinessSetting.businessAddress.detail,
+          },
+        },
+      );
       return {
         status: true,
-        message: 'business Information update successfully!!!'
-      }
+        message: 'business Information update successfully!!!',
+      };
     } catch (error) {
-      return new InternalServerErrorException()
+      return new InternalServerErrorException();
     }
   }
 
   async checkBusinessForActivation(token: string, inController: boolean) {
-    const { phoneNumber, business } = this.authService.decodeToken(token)
+    const { phoneNumber, business } = this.authService.decodeToken(token);
     const businessDoc = await this.businessModel.findOne({
-      BusinessOwnerPhoneNumber: phoneNumber
-    })
-    const address:BusinessAddressModel = businessDoc.BusinessAddress as BusinessAddressModel
-    const isBusinessAddressValid = this.checkBusinessAddressValue(address)
-    if(!isBusinessAddressValid) {
+      BusinessOwnerPhoneNumber: phoneNumber,
+    });
+    const address: BusinessAddressModel =
+      businessDoc.BusinessAddress as BusinessAddressModel;
+    const isBusinessAddressValid = this.checkBusinessAddressValue(address);
+    if (!isBusinessAddressValid) {
       return {
         status: false,
-        message: 'address does not have valid value'
-      }
+        message: 'address does not have valid value',
+      };
     }
-    const workTimes = businessDoc.WorkTimes
-    const isBusinessWorkTimesValid = this.checkBusinessWorkTimesValue(workTimes)
-    if(!isBusinessWorkTimesValid) {
+    const workTimes = businessDoc.WorkTimes;
+    const isBusinessWorkTimesValid =
+      this.checkBusinessWorkTimesValue(workTimes);
+    if (!isBusinessWorkTimesValid) {
       return {
         status: false,
-        message: 'work Times does not have valid value'
-      }
+        message: 'work Times does not have valid value',
+      };
     }
-    if(inController) {
+    if (inController) {
       return {
         status: true,
-        message: 'business have all info for activation'
-      }
+        message: 'business have all info for activation',
+      };
     }
     return {
       status: true,
@@ -255,39 +266,78 @@ export class BusinessService {
       startPlan: businessDoc.StartPlanDate,
       endPlan: businessDoc.EndPlanDate,
       phoneNumber,
-      business
-    }
+      business,
+    };
   }
 
-  async updateBusiness(phoneNumber: string, query: object, session: ClientSession) {
-    await this.businessModel.updateOne({
-      BusinessOwnerPhoneNumber: phoneNumber
-    }, { ...query }, { session } )
-
+  async updateBusiness(
+    phoneNumber: string,
+    query: object,
+    session: ClientSession,
+  ) {
+    await this.businessModel.updateOne(
+      {
+        BusinessOwnerPhoneNumber: phoneNumber,
+      },
+      { ...query },
+      { session },
+    );
   }
 
-  checkBusinessAddressValue(BusinessAddress: BusinessAddressModel) : boolean {
-    if(BusinessAddress.state === "" || BusinessAddress.city === "" || BusinessAddress.detail === "") {
-      return false
+  checkBusinessAddressValue(BusinessAddress: BusinessAddressModel): boolean {
+    if (
+      BusinessAddress.state === '' ||
+      BusinessAddress.city === '' ||
+      BusinessAddress.detail === ''
+    ) {
+      return false;
     }
-    if(BusinessAddress.state === null || BusinessAddress.city === null || BusinessAddress.detail === null) {
-      return false
+    if (
+      BusinessAddress.state === null ||
+      BusinessAddress.city === null ||
+      BusinessAddress.detail === null
+    ) {
+      return false;
     }
-    return true
+    return true;
   }
-  
+
   checkBusinessWorkTimesValue(workTimes) {
-    const weekDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Weekend']
+    const weekDayNames = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+      'Weekend',
+    ];
 
-    for(let i = 0; i < 8; i++) {
-      const dayName = weekDayNames[i]
-      if(workTimes[dayName].morning === null || workTimes[dayName].morning === undefined || workTimes[dayName].morning === "") {
-        return false
+    for (let i = 0; i < 8; i++) {
+      const dayName = weekDayNames[i];
+      if (
+        workTimes[dayName].morning === null ||
+        workTimes[dayName].morning === undefined ||
+        workTimes[dayName].morning === ''
+      ) {
+        return false;
       }
-      if(workTimes[dayName].afternoon === null || workTimes[dayName].afternoon === undefined || workTimes[dayName].afternoon === "") {
-        return false
+      if (
+        workTimes[dayName].afternoon === null ||
+        workTimes[dayName].afternoon === undefined ||
+        workTimes[dayName].afternoon === ''
+      ) {
+        return false;
       }
     }
-    return true
+    return true;
+  }
+
+  async findBusinessByName(findBusinessByURLDto: FindBusinessByURLDto) {
+    const businessobj = await this.businessModel.find({
+      BusinessURL: findBusinessByURLDto.businessName,
+    });
+    return businessobj;
   }
 }
