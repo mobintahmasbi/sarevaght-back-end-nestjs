@@ -1,4 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BusinessService } from 'src/business/business.service';
 import { OTP } from './schema/otp.schema';
@@ -19,86 +23,99 @@ export class OTPService {
   ) {}
 
   async createOTP(findBusinessByPhonenumberDto: FindBusinessByPhonenumberDto) {
-    this.logger.info('this is an informational message')
     const phoneNumber = findBusinessByPhonenumberDto.phoneNumber;
-    const otpDoc = await this.OTPModel.find({ phoneNumber });
-    if (otpDoc.length === 0) {
-      let otpCode = this.generateOTPCode();
-      const createdOTP = await this.OTPModel.create({
-        phoneNumber,
-        OtpCode: otpCode,
-      });
-      return {
-        status: true,
-        message: 'otp code generated successfully',
-        phoneNumber,
-      };
-    }
-    if (otpDoc.length === 1) {
+    try {
+      this.logger.info(
+        `user try to enter with this phoneNumber: ${phoneNumber}`,
+      );
+      const otpDoc = await this.OTPModel.find({ phoneNumber });
+      if (otpDoc.length === 0) {
+        let otpCode = this.generateOTPCode();
+        const createdOTP = await this.OTPModel.create({
+          phoneNumber,
+          OtpCode: otpCode,
+        });
+        return {
+          status: true,
+          message: 'otp code generated successfully',
+          phoneNumber,
+        };
+      }
+      if (otpDoc.length === 1) {
+        return {
+          status: false,
+          message: 'otp code already exist and valid',
+          phoneNumber,
+        };
+      }
       return {
         status: false,
-        message: 'otp code already exist and valid',
+        message: 'something unusual happened',
         phoneNumber,
       };
+    } catch (error) {
+      this.logger.error(`user phoneNumber: ${phoneNumber}, error message: ${error.message}`, error);
+      return new InternalServerErrorException();
     }
-    return {
-      status: false,
-      message: 'something unusual happened',
-      phoneNumber,
-    };
   }
 
   //needs a refactor
   async validateOTP(validateOTPDto: ValidateOTPDto) {
     const { phoneNumber, otpCode } = validateOTPDto;
 
-    const otpDoc = await this.OTPModel.find({ phoneNumber });
+    try {
+      this.logger.info(`user with this phoneNumber: ${phoneNumber}, try to enter with this otp code: ${otpCode}`)
+      const otpDoc = await this.OTPModel.find({ phoneNumber });
 
-    if (otpDoc.length === 0) {
-      return {
-        status: false,
-        message: 'otp is wrong',
-        phoneNumber,
-      };
-    }
-
-    if (otpDoc.length === 1) {
-      const isCorrectOTP = otpDoc[0].OtpCode === otpCode;
-      if (!isCorrectOTP) {
+      if (otpDoc.length === 0) {
         return {
           status: false,
           message: 'otp is wrong',
           phoneNumber,
         };
       }
-      if (isCorrectOTP) {
-        const BusinessDoc =
-          await this.businessService.checkExistanceOfBusinessByPhoneNumber({
+
+      if (otpDoc.length === 1) {
+        const isCorrectOTP = otpDoc[0].OtpCode === otpCode;
+        if (!isCorrectOTP) {
+          return {
+            status: false,
+            message: 'otp is wrong',
             phoneNumber,
-          });
-        if (BusinessDoc.IsBusinessExist) {
-          const token = await this.authService.generateAccessToken(
-            phoneNumber,
-            BusinessDoc.business,
-          );
+          };
+        }
+        if (isCorrectOTP) {
+          const BusinessDoc =
+            await this.businessService.checkExistanceOfBusinessByPhoneNumber({
+              phoneNumber,
+            });
+          if (BusinessDoc.IsBusinessExist) {
+            const token = await this.authService.generateAccessToken(
+              phoneNumber,
+              BusinessDoc.business,
+            );
+            return {
+              status: true,
+              message: 'otp is correct',
+              phoneNumber,
+              registered: true,
+              token,
+            };
+          }
+          const registerToken =
+            await this.authService.generateRegisterToken(phoneNumber);
           return {
             status: true,
             message: 'otp is correct',
             phoneNumber,
-            registered: true,
-            token,
+            registered: false,
+            registerToken: registerToken,
           };
         }
-        const registerToken =
-          await this.authService.generateRegisterToken(phoneNumber);
-        return {
-          status: true,
-          message: 'otp is correct',
-          phoneNumber,
-          registered: false,
-          registerToken: registerToken,
-        };
       }
+    } catch (error) {
+      this.logger.error(`user phoneNumber: ${phoneNumber},error message: ${error.message}`, error)
+      return new InternalServerErrorException()
     }
   }
 
