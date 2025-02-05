@@ -7,12 +7,15 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PaymentModule } from './payment/payment.module';
 import { AppointmentModule } from './appointment/appointment.module';
+import { WinstonModule } from 'nest-winston';
+import { winstonOptions } from './logger.config';
 
 @Module({
   imports: [ConfigModule.forRoot({
     envFilePath: '.development.env',
     isGlobal: true
   }),
+  WinstonModule.forRoot(winstonOptions),
   MongooseModule.forRootAsync({
     imports: [ConfigModule],
     useFactory: (configService: ConfigService) => ({

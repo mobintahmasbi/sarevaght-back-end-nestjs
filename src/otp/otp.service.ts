@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { BusinessService } from 'src/business/business.service';
 import { OTP } from './schema/otp.schema';
@@ -6,6 +6,8 @@ import { Model } from 'mongoose';
 import { FindBusinessByPhonenumberDto } from '../business/DTO/find-business-by-phonenumber.dto';
 import { ValidateOTPDto } from './DTO/validateOTP.dto';
 import { AuthService } from 'src/auth/auth.service';
+import { Logger } from 'winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class OTPService {
@@ -13,9 +15,11 @@ export class OTPService {
     private readonly businessService: BusinessService,
     private readonly authService: AuthService,
     @InjectModel(OTP.name) private OTPModel: Model<OTP>,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
 
   async createOTP(findBusinessByPhonenumberDto: FindBusinessByPhonenumberDto) {
+    this.logger.info('this is an informational message')
     const phoneNumber = findBusinessByPhonenumberDto.phoneNumber;
     const otpDoc = await this.OTPModel.find({ phoneNumber });
     if (otpDoc.length === 0) {
