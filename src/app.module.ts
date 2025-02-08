@@ -12,7 +12,7 @@ import { winstonOptions } from './logger.config';
 
 @Module({
   imports: [ConfigModule.forRoot({
-    envFilePath: '.development.env',
+    envFilePath: '.env',
     isGlobal: true
   }),
   WinstonModule.forRoot(winstonOptions),
