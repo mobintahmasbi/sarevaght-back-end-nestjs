@@ -12,12 +12,14 @@ import { ValidateOTPDto } from './DTO/validateOTP.dto';
 import { AuthService } from 'src/auth/auth.service';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { InteractionService } from '../interaction/interaction.service';
 
 @Injectable()
 export class OTPService {
   constructor(
     private readonly businessService: BusinessService,
     private readonly authService: AuthService,
+    private readonly interactionService: InteractionService,
     @InjectModel(OTP.name) private OTPModel: Model<OTP>,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
   ) {}
@@ -31,6 +33,14 @@ export class OTPService {
       const otpDoc = await this.OTPModel.find({ phoneNumber });
       if (otpDoc.length === 0) {
         let otpCode = this.generateOTPCode();
+        const smsStat = await this.interactionService.sendCode(phoneNumber, otpCode)
+        if(!smsStat) {
+          return {
+            status: false,
+            message: 'somthing went wrong please try again',
+            phoneNumber
+          }
+        }
         const createdOTP = await this.OTPModel.create({
           phoneNumber,
           OtpCode: otpCode,
@@ -125,7 +135,6 @@ export class OTPService {
       let randomNumber = Math.floor(Math.random() * 9 + 1);
       otpCode = otpCode + randomNumber;
     }
-    console.log(otpCode);
     return otpCode;
   }
 }
