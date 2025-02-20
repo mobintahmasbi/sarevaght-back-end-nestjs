@@ -22,13 +22,11 @@ export class Appointment {
     @Prop()
     businessPhoneNumber: string
 
-    @Prop({
-        type: Object
-    })
-    appointmentsObj: Record<string, object>
+    @Prop({ type: Map, of: Object })
+    appointmentsObj: Map<string, object>
 
     @Prop({
-        default: Date.now()
+        default: () => Date.now()
     })
     createdAt: Date
 }

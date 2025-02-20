@@ -29,9 +29,10 @@ export class AppointmentService {
     const todayDate = new Date().setHours(0, 0, 0, 0);
 
     try {
-      let { businessInfo, cachingDate } = await this.cacheService.get(
-        findBusinessByURLDto.businessName,
-      );
+      const cacheResult =
+        (await this.cacheService.get(findBusinessByURLDto.businessName)) || {};
+      
+      let { businessInfo, cachingDate } = cacheResult;
 
       if (!businessInfo || cachingDate != todayDate) {
         let businessDocs =
@@ -56,7 +57,7 @@ export class AppointmentService {
       }
       return {
         status: 200,
-        businessInfo,
+        businessInfo: businessInfo._doc,
       };
     } catch (error) {
       this.logger.error(
@@ -221,6 +222,8 @@ export class AppointmentService {
         },
       });
       if (appointmentDocs.length === 1) {
+        console.log(appointmentDocs[0]);
+        
         return {
           status: true,
           message: 'getting appointment document successfully',
@@ -235,20 +238,20 @@ export class AppointmentService {
       }
       const dayName = this.getDayName(appointmentDate);
       const bworkTimeToday = business.WorkTimes[dayName];
-      let timePeriod = {}
-      if(bworkTimeToday.morning !== 'closed') {
-        const startEnd = bworkTimeToday.morning.split('-')
-        let tpa = this.generateTimeSlots(startEnd[0], startEnd[1])
+      let timePeriod = {};
+      if (bworkTimeToday.morning !== 'closed') {
+        const startEnd = bworkTimeToday.morning.split('-');
+        let tpa = this.generateTimeSlots(startEnd[0], startEnd[1]);
         timePeriod = {
-          ...tpa
-        }
+          ...tpa,
+        };
       }
-      if(bworkTimeToday.afternoon !== 'closed') {
-        const startEnd = bworkTimeToday.afternoon.split('-')
-        let tpa = this.generateTimeSlots(startEnd[0], startEnd[1])
+      if (bworkTimeToday.afternoon !== 'closed') {
+        const startEnd = bworkTimeToday.afternoon.split('-');
+        let tpa = this.generateTimeSlots(startEnd[0], startEnd[1]);
         timePeriod = {
-          ...tpa
-        }
+          ...tpa,
+        };
       }
       const newAppointmentObj = await this.AppointmentModel.create({
         dayname: dayName,
@@ -257,9 +260,9 @@ export class AppointmentService {
         createdAt: appointmentDate,
         status: AppointmentStatusEnum.OPEN,
         appointmentsObj: {
-          ...timePeriod
-        }
-      })
+          ...timePeriod,
+        },
+      });
       return {
         status: true,
         message: 'getting appointment document successfully',
@@ -267,9 +270,9 @@ export class AppointmentService {
           bname: newAppointmentObj.businessName,
           appointmentObject: newAppointmentObj.appointmentsObj,
           appointmentDate: newAppointmentObj.createdAt,
-          dayName: newAppointmentObj.dayname
+          dayName: newAppointmentObj.dayname,
         },
-      }
+      };
     } catch (error) {
       this.logger.error(
         `error message: ${error.message}, business url that user want to accesss: ${getAppointmentDocDto.businessName}`,
