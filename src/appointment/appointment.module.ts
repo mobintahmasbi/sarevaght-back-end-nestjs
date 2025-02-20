@@ -4,6 +4,7 @@ import { AppointmentService } from './appointment.service';
 import { BusinessModule } from 'src/business/business.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Appointment, AppointmentSchema } from './schema/appointment.schema';
+import { SharedModule } from 'src/shared/shared.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { Appointment, AppointmentSchema } from './schema/appointment.schema';
       { name: Appointment.name, schema: AppointmentSchema },
     ]),
     BusinessModule,
+    SharedModule
   ],
   controllers: [AppointmentController],
   providers: [AppointmentService],
