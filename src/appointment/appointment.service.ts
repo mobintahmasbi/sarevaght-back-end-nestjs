@@ -3,9 +3,9 @@ import {
   InternalServerErrorException,
   Inject,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Appointment } from './schema/appointment.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { BusinessService } from 'src/business/business.service';
 import { FindBusinessByURLDto } from '../business/DTO/find-business-by-name.dto';
 import { AccountTypeEnum } from '../business/schema/account-type.enum';
@@ -14,13 +14,17 @@ import { GetAppointmentDocDto } from './DTO/get-appointment-doc.dto';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { CacheService } from '../cache/cache.service';
+import { SetAppointmentDto } from './DTO/set-appointment.dto';
+import { Customer } from './schema/customer.schema';
 
 @Injectable()
 export class AppointmentService {
   constructor(
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @InjectModel(Customer.name) private readonly CustomerModel: Model<Customer>,
     @InjectModel(Appointment.name)
     private readonly AppointmentModel: Model<Appointment>,
+    @InjectConnection() private readonly connection: mongoose.Connection,
     private readonly businessService: BusinessService,
     private readonly cacheService: CacheService,
   ) {}
@@ -31,7 +35,7 @@ export class AppointmentService {
     try {
       const cacheResult =
         (await this.cacheService.get(findBusinessByURLDto.businessName)) || {};
-      
+
       let { businessInfo, cachingDate } = cacheResult;
 
       if (!businessInfo || cachingDate != todayDate) {
@@ -223,7 +227,7 @@ export class AppointmentService {
       });
       if (appointmentDocs.length === 1) {
         console.log(appointmentDocs[0]);
-        
+
         return {
           status: true,
           message: 'getting appointment document successfully',
@@ -250,6 +254,7 @@ export class AppointmentService {
         const startEnd = bworkTimeToday.afternoon.split('-');
         let tpa = this.generateTimeSlots(startEnd[0], startEnd[1]);
         timePeriod = {
+          ...timePeriod,
           ...tpa,
         };
       }
@@ -257,6 +262,7 @@ export class AppointmentService {
         dayname: dayName,
         businessName: business.BusinessName,
         businessPhoneNumber: business.BusinessOwnerPhoneNumber,
+        businessURL: business.BusinessURL,
         createdAt: appointmentDate,
         status: AppointmentStatusEnum.OPEN,
         appointmentsObj: {
@@ -281,6 +287,180 @@ export class AppointmentService {
     }
   }
 
+  async setAppointment(setAppointmentDto: SetAppointmentDto) {
+    const {
+      appointmentHour,
+      appointmentDate,
+      businessName,
+      detail,
+      customerName,
+      customerPhoneNumber,
+    } = setAppointmentDto;
+    let startAppointmentDate = new Date(appointmentDate).setHours(0, 0, 0, 0);
+    const endAppointmentDate = new Date(appointmentDate).setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+    let todayStartDate = new Date().setHours(0, 0, 0, 0);
+    if (todayStartDate > startAppointmentDate) {
+      return {
+        status: false,
+        message: "you can't get appointment in the past",
+      };
+    }
+    try {
+      const appointmentDocs = await this.AppointmentModel.find({
+        businessURL: businessName,
+        createdAt: {
+          $gte: startAppointmentDate,
+          $lte: endAppointmentDate,
+        },
+      });
+      if (appointmentDocs.length === 0) {
+        return {
+          status: false,
+          message:
+            'no appointment doc found for this date and this business url , come back and start from personal page',
+        };
+      }
+      const appointment = appointmentDocs[0];
+      const { appointmentsObj } = appointment;
+      const app = appointmentsObj.get(appointmentHour);
+      if (app !== null) {
+        return {
+          status: false,
+          message: 'this date taken by another person before',
+        };
+      }
+      if (!appointmentsObj.has(appointmentHour)) {
+        return {
+          status: false,
+          message:
+            'this business does not accept appointment for this specific time',
+        };
+      }
+      if (startAppointmentDate > todayStartDate) {
+        const { status } = await this.setAppointmentIntoMongo(
+          setAppointmentDto,
+          appointment,
+        );
+        if (status) {
+          return {
+            status,
+            message: 'setting appointment successfully',
+            appointmentInfo: {
+              customerName,
+              customerPhoneNumber,
+              appointmentDate,
+              appointmentHour,
+            },
+          };
+        }
+        return new InternalServerErrorException()
+      }
+      const currentDate = new Date()
+      const currentDateString = `${currentDate.getHours()}:${currentDate.getMinutes()}`
+      const requestedMinutes = this.timeToMinutes(appointmentHour) + 40
+      const currentMinutes = this.timeToMinutes(currentDateString)
+      if(currentMinutes >= requestedMinutes) {
+        const { status } = await this.setAppointmentIntoMongo(
+          setAppointmentDto,
+          appointment,
+        );
+        if (status) {
+          return {
+            status,
+            message: 'setting appointment successfully',
+            appointmentInfo: {
+              customerName,
+              customerPhoneNumber,
+              appointmentDate,
+              appointmentHour,
+            },
+          };
+        }
+        return new InternalServerErrorException()
+      }
+      return {
+        status: false,
+        message: 'for setting an appointment must act atleast 40 minutes before the appointment time'
+      }
+    } catch (error) {
+      this.logger.error(
+        `error message: ${error.message}, business url that user want to accesss: ${setAppointmentDto.businessName}, error object : ${error}`,
+      );
+      return new InternalServerErrorException();
+    }
+  }
+
+  private timeToMinutes(time: string) {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  private async setAppointmentIntoMongo(
+    setAppointmentDto: SetAppointmentDto,
+    appointment,
+  ) {
+    const {
+      appointmentHour,
+      appointmentDate,
+      businessName,
+      detail,
+      customerName,
+      customerPhoneNumber,
+    } = setAppointmentDto;
+
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
+    try {
+      await this.AppointmentModel.updateOne(
+        {
+          _id: appointment._id,
+        },
+        {
+          $set: {
+            [`appointmentsObj.${appointmentHour}`]: {
+              customerName,
+              customerPhoneNumber,
+              detail,
+            },
+          },
+        },
+        { session },
+      );
+
+      await this.CustomerModel.create(
+        {
+          customerPhoneNumber,
+          customerName,
+          businessPhoneNumber: appointment.businessPhoneNumber,
+          appointmentDate,
+          appointmentHour,
+          detail,
+        },
+        { session },
+      );
+
+      await session.commitTransaction();
+      return {
+        status: true,
+      };
+    } catch (error) {
+      this.logger.error(
+        `error message: ${error.message}, business url that user want to accesss: ${setAppointmentDto.businessName}, error object : ${error}`,
+      );
+      return {
+        status: false,
+      };
+    } finally {
+      session.endSession();
+    }
+  }
+
   private parseTime(timeStr: string) {
     const parts = timeStr.split(':');
     const hours = parseInt(parts[0], 10);
@@ -302,7 +482,7 @@ export class AppointmentService {
     // Iterate from startMinutes up to but not including endMinutes in 30-minute steps
     for (let t = startMinutes; t < endMinutes; t += 30) {
       const timeKey = this.formatTime(t);
-      timeSlots[timeKey] = {};
+      timeSlots[timeKey] = null;
     }
 
     return timeSlots;

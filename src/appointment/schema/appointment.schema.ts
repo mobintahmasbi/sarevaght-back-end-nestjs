@@ -20,6 +20,9 @@ export class Appointment {
     businessName: string
 
     @Prop()
+    businessURL: string
+
+    @Prop()
     businessPhoneNumber: string
 
     @Prop({ type: Map, of: Object })
