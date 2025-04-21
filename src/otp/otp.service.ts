@@ -13,6 +13,7 @@ import { AuthService } from 'src/auth/auth.service';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { InteractionService } from '../interaction/interaction.service';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class OTPService {
@@ -36,7 +37,7 @@ export class OTPService {
         const smsStat = await this.interactionService.sendCode(phoneNumber, otpCode)
         if(!smsStat) {
           return {
-            status: false,
+            status: 500,
             message: 'somthing went wrong please try again',
             phoneNumber
           }
@@ -46,20 +47,43 @@ export class OTPService {
           OtpCode: otpCode,
         });
         return {
-          status: true,
+          status: 201,
           message: 'otp code generated successfully',
           phoneNumber,
         };
       }
-      if (otpDoc.length === 1) {
+      const currentDate = DateTime.fromJSDate(new Date()).setZone('utc')
+      const expiresDate = DateTime.fromJSDate(otpDoc[0].ExpiredAt).setZone('utc')
+      if(otpDoc.length === 1 && expiresDate < currentDate) {
+        await this.OTPModel.deleteOne({ phoneNumber })
+        let otpCode = this.generateOTPCode();
+        const smsStat = await this.interactionService.sendCode(phoneNumber, otpCode)
+        if(!smsStat) {
+          return {
+            status: 500,
+            message: 'somthing went wrong please try again',
+            phoneNumber
+          }
+        }
+        const createdOTP = await this.OTPModel.create({
+          phoneNumber,
+          OtpCode: otpCode,
+        });
         return {
-          status: false,
+          status: 201,
+          message: 'otp code generated successfully',
+          phoneNumber,
+        };
+      }
+      if (otpDoc.length === 1 && expiresDate > currentDate) {
+        return {
+          status: 400,
           message: 'otp code already exist and valid',
           phoneNumber,
         };
       }
       return {
-        status: false,
+        status: 500,
         message: 'something unusual happened',
         phoneNumber,
       };
@@ -79,17 +103,26 @@ export class OTPService {
 
       if (otpDoc.length === 0) {
         return {
-          status: false,
+          status: 400,
           message: 'otp is wrong',
           phoneNumber,
         };
       }
-
-      if (otpDoc.length === 1) {
+      const currentDate = DateTime.fromJSDate(new Date()).setZone('utc')
+      const expiresDate = DateTime.fromJSDate(otpDoc[0].ExpiredAt).setZone('utc')
+      if(otpDoc.length === 1 && expiresDate < currentDate) {
+        await this.OTPModel.deleteOne({ phoneNumber })
+        return {
+          status: 400,
+          message: 'otp is expired',
+          phoneNumber,
+        };
+      }
+      if (otpDoc.length === 1 && expiresDate > currentDate) {
         const isCorrectOTP = otpDoc[0].OtpCode === otpCode;
         if (!isCorrectOTP) {
           return {
-            status: false,
+            status: 400,
             message: 'otp is wrong',
             phoneNumber,
           };
@@ -105,7 +138,7 @@ export class OTPService {
               BusinessDoc.business,
             );
             return {
-              status: true,
+              status: 200,
               message: 'otp is correct',
               phoneNumber,
               registered: true,
@@ -115,7 +148,7 @@ export class OTPService {
           const registerToken =
             await this.authService.generateRegisterToken(phoneNumber);
           return {
-            status: true,
+            status: 200,
             message: 'otp is correct',
             phoneNumber,
             registered: false,

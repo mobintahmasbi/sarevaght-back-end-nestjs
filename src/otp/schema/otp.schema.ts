@@ -19,7 +19,7 @@ export class OTP {
   OtpCode: string;
 
   @Prop({
-    default: () => new Date(),
+    default: () => new Date()
   })
   createdAt: Date;
 
