@@ -1,6 +1,6 @@
 import { ClientSession, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Inject } from '@nestjs/common';
 import { FindBusinessByPhonenumberDto } from './DTO/find-business-by-phonenumber.dto';
 import { Business } from './schema/business.schema';
 import { CreateBusinessDto } from './DTO/create-business.dto';
@@ -8,6 +8,8 @@ import { AuthService } from 'src/auth/auth.service';
 import { AccountTypeEnum } from './schema/account-type.enum';
 import { SetBusinessAddressDto } from './DTO/set-business-address.dto';
 import { SetBusinessWorkTimesDto } from './DTO/set-business-work-times.dto';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger } from 'winston';
 import {
   BusinessAddressModel,
   SetBusinessSetting,
@@ -18,6 +20,7 @@ import { FindBusinessByURLDto } from './DTO/find-business-by-name.dto';
 export class BusinessService {
   constructor(
     private readonly authService: AuthService,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     @InjectModel(Business.name) private businessModel: Model<Business>,
   ) {}
 
@@ -91,13 +94,18 @@ export class BusinessService {
 
   async getAdditionalInfo(token: string) {
     const { phoneNumber } = this.authService.decodeToken(token);
-    const businessDoc = await this.businessModel.find({
-      BusinessOwnerPhoneNumber: phoneNumber,
-    });
-    return {
-      workSchedule: businessDoc[0].WorkTimes,
-      address: businessDoc[0].BusinessAddress,
-    };
+    try {
+      const businessDoc = await this.businessModel.find({
+        BusinessOwnerPhoneNumber: phoneNumber,
+      });
+      return {
+        workSchedule: businessDoc[0].WorkTimes,
+        address: businessDoc[0].BusinessAddress,
+      };
+    } catch (error) {
+      this.logger.error(`function name: getAdditionalInfo in business service. error message: ${error.message}`)
+      return new InternalServerErrorException()
+    }
   }
 
   //TODO: needs to check state and city name to be correct value
