@@ -9,6 +9,7 @@ import { PaymentModule } from './payment/payment.module';
 import { AppointmentModule } from './appointment/appointment.module';
 import { WinstonModule } from 'nest-winston';
 import { winstonOptions } from './logger.config';
+import { IranStateInfoModule } from './iranStateInfo/iranStateInfo.module';
 
 @Module({
   imports: [ConfigModule.forRoot({
@@ -31,7 +32,8 @@ import { winstonOptions } from './logger.config';
   BusinessModule,
   OTPModule,
   PaymentModule,
-  AppointmentModule
+  AppointmentModule,
+  IranStateInfoModule
   ],
   controllers: [],
   providers: [{
