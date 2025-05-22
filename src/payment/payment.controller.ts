@@ -11,4 +11,11 @@ export class PaymentController{
     async startFreeTrial(@Body() Token: { token: string }) {
         return this.paymentService.activateFreeTrial(Token.token)
     }
+
+    @Post('check-free-trial')
+    @UseGuards(AuthGuard)
+    async checkingUsageFreeTrial(@Body() Token: { token: string }) {
+        return this.paymentService.checkFreeTrialUsage(Token.token)
+    }
+
 }

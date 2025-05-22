@@ -20,14 +20,7 @@ export class SetBusinessSetting {
   ownerFullName: string;
 
   @IsString()
-  businessType: string;
-
-  @IsString()
   businessURL: string;
-
-  @ValidateNested()
-  @Type(() => BusinessAddressModel)
-  businessAddress: BusinessAddressModel
 
   @IsString()
   token: string;

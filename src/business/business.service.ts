@@ -69,7 +69,6 @@ export class BusinessService {
           Friday: { morning: '', afternoon: '' },
           Saturday: { morning: '', afternoon: '' },
           Sunday: { morning: '', afternoon: '' },
-          Weekend: { morning: '', afternoon: '' },
         },
         BusinessURL: createBusinessDto.businessURL,
         //this is something should think about it to find a good defualt picture url
@@ -222,12 +221,6 @@ export class BusinessService {
           BusinessName: setBusinessSetting.businessName,
           OwnerFullName: setBusinessSetting.ownerFullName,
           BusinessURL: setBusinessSetting.businessURL,
-          BusinessType: setBusinessSetting.businessType,
-          BusinessAddress: {
-            state: setBusinessSetting.businessAddress.state,
-            city: setBusinessSetting.businessAddress.city,
-            detail: setBusinessSetting.businessAddress.detail,
-          },
         },
       );
       return {
@@ -319,10 +312,9 @@ export class BusinessService {
       'Friday',
       'Saturday',
       'Sunday',
-      'Weekend',
     ];
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 7; i++) {
       const dayName = weekDayNames[i];
       if (
         workTimes[dayName].morning === null ||

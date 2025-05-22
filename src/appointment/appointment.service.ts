@@ -16,6 +16,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { CacheService } from '../cache/cache.service';
 import { SetAppointmentDto } from './DTO/set-appointment.dto';
 import { Customer } from './schema/customer.schema';
+import { DateTime } from 'luxon';
 
 @Injectable()
 export class AppointmentService {
@@ -30,15 +31,15 @@ export class AppointmentService {
   ) {}
 
   async getBusiness(findBusinessByURLDto: FindBusinessByURLDto) {
-    const todayDate = new Date().setHours(0, 0, 0, 0);
+    const tenMinutesExpiration = 10 * 60 * 1000
 
     try {
       const cacheResult =
         (await this.cacheService.get(findBusinessByURLDto.businessName)) || {};
 
-      let { businessInfo, cachingDate } = cacheResult;
+      let { businessInfo } = cacheResult;
 
-      if (!businessInfo || cachingDate != todayDate) {
+      if (!businessInfo) {
         let businessDocs =
           await this.businessService.findBusinessByName(findBusinessByURLDto);
         if (businessDocs.length === 0) {
@@ -54,9 +55,8 @@ export class AppointmentService {
           businessDocs[0].BusinessURL,
           {
             businessInfo,
-            cachingDate: todayDate,
           },
-          0,
+          tenMinutesExpiration,
         );
       }
       return {
@@ -102,7 +102,7 @@ export class AppointmentService {
       return {
         status: 403,
         message: 'business does not have active plan',
-        bstatus: 'not active',
+        bstatus: 'not-active',
         businessInformation,
       };
     }
@@ -120,6 +120,28 @@ export class AppointmentService {
         businessInformation,
       };
     }
+    const now = DateTime.fromJSDate(new Date()).setZone('Asia/Tehran').plus({
+      hour: 1,
+    });
+    
+    const morningInterval = bworkTimeToday.morning.split('-')
+    const afternoonInterval = bworkTimeToday.afternoon.split('-')
+    const startOfMorningInterval = this.timeToMinutes(morningInterval[0])
+    const endOfMorningInterval = this.timeToMinutes(morningInterval[1])
+    const startOfAfternoonInterval = this.timeToMinutes(afternoonInterval[0])
+    const endOfAfternoonInterval = this.timeToMinutes(afternoonInterval[1])
+    const nowTime = this.timeToMinutes(`${now.hour}:${now.minute}`)
+    const isOpenMorning = startOfMorningInterval <= nowTime && endOfMorningInterval > nowTime
+    const isOpenAfternoon = startOfAfternoonInterval <= nowTime && endOfAfternoonInterval > nowTime
+    if(!isOpenAfternoon || isOpenMorning) {
+      return {
+        status: 403,
+        message: 'buseinss is closed now',
+        bstatus: 'closed',
+        businessInformation,
+      }
+    }
+
     return {
       status: 200,
       bstatus: 'open',
@@ -358,13 +380,13 @@ export class AppointmentService {
             },
           };
         }
-        return new InternalServerErrorException()
+        return new InternalServerErrorException();
       }
-      const currentDate = new Date()
-      const currentDateString = `${currentDate.getHours()}:${currentDate.getMinutes()}`
-      const requestedMinutes = this.timeToMinutes(appointmentHour) + 40
-      const currentMinutes = this.timeToMinutes(currentDateString)
-      if(currentMinutes >= requestedMinutes) {
+      const currentDate = new Date();
+      const currentDateString = `${currentDate.getHours()}:${currentDate.getMinutes()}`;
+      const requestedMinutes = this.timeToMinutes(appointmentHour) + 40;
+      const currentMinutes = this.timeToMinutes(currentDateString);
+      if (currentMinutes >= requestedMinutes) {
         const { status } = await this.setAppointmentIntoMongo(
           setAppointmentDto,
           appointment,
@@ -381,12 +403,13 @@ export class AppointmentService {
             },
           };
         }
-        return new InternalServerErrorException()
+        return new InternalServerErrorException();
       }
       return {
         status: false,
-        message: 'for setting an appointment must act atleast 40 minutes before the appointment time'
-      }
+        message:
+          'for setting an appointment must act atleast 40 minutes before the appointment time',
+      };
     } catch (error) {
       this.logger.error(
         `error message: ${error.message}, business url that user want to accesss: ${setAppointmentDto.businessName}, error object : ${error}`,
